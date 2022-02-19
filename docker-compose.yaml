@@ -1,0 +1,86 @@
+version: '3.8'
+
+x-services-volume:
+  &services-volume
+  type: bind
+  source: ./shared/.bashrc
+  target: ${HOME}/.bashrc
+x-services-volume1:
+  &services-volume1
+  type: bind
+  source: ./shared/.bash_prompt_command
+  target: ${HOME}/.bash_prompt_command
+x-services-volume2:
+  &services-volume2
+  type: bind
+  source: ./shared/.gitconfig
+  target: ${HOME}/.gitconfig
+x-services-volume3:
+  &services-volume3
+  type: bind
+  source: ./shared/init_script.sh
+  target: ${HOME}/init_script.sh
+
+services:
+  master:
+    container_name: "tf-master"
+    hostname: "tf-master"
+    image: $IMG
+    # command: sleep infinity & wait
+    volumes: 
+        - ./master/.aws:${HOME}/.aws
+        - *services-volume
+        - *services-volume1
+        - *services-volume2
+        - *services-volume3
+    profiles: ["tools"]
+    environment:
+      - KUBE_CONFS=${KUBE_MASTER}
+      
+  dev:
+    container_name: "tf-dev"
+    hostname: "tf-dev"
+    image: $IMG
+    # command: sleep infinity & wait
+    volumes: 
+        - ./dev/.aws:${HOME}/.aws
+        - *services-volume
+        - *services-volume1
+        - *services-volume2
+        - *services-volume3
+    ports:
+      - "8000:8000"    
+    profiles: ["tools"]
+    environment:
+      - KUBE_CONFS=${KUBE_DEV}
+
+  prod:
+    container_name: "tf-prod"
+    hostname: "tf-prod"
+    image: $IMG
+    # command: sleep infinity & wait
+    volumes: 
+        - ./prod/.aws:${HOME}/.aws
+        - *services-volume
+        - *services-volume1
+        - *services-volume2
+        - *services-volume3
+    profiles: ["prod"]
+    environment:
+      - KUBE_CONFS=${KUBE_PROD}
+
+  vpn-client:
+    image: rdvencioneck/aws-vpn-client
+    container_name: aws-vpn-client
+    network_mode: "host"
+    restart: "no"
+    volumes:
+      - "./vpn.conf:/vpn.conf:rw"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/resolv.conf:/etc/resolv.conf:rw"
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+    cap_add:
+      - NET_ADMIN
+    profiles: ["net"]

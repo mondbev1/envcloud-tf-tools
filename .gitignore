@@ -1,0 +1,4 @@
+**/.aws
+**/.ssh
+vpn.conf
+**/.kube/config
